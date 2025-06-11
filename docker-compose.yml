@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    restart: always
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: price-tracker
+
+  backend:
+    build: ./backend
+    container_name: backend
+    restart: always
+    ports:
+      - '3001:3001'
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/price-tracker
+      - PORT=3001
+      - JWT_SECRET=your_jwt_secret
+    depends_on:
+      - mongodb
+    env_file:
+      - ./backend/.env
+
+  scraper:
+    build: ./scraper
+    container_name: scraper
+    restart: always
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/price-tracker
+      - BACKEND_URL=http://backend:3001
+    depends_on:
+      - backend
+      - mongodb
+    env_file:
+      - ./scraper/.env
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      - NEXT_PUBLIC_BACKEND_URL=http://backend:3001
+    depends_on:
+      - backend
+    env_file:
+      - ./frontend/.env
+
+volumes:
+  mongo-data: 

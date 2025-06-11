@@ -1,0 +1,29 @@
+{
+  "name": "scraper",
+  "version": "1.0.0",
+  "description": "Web scraper service for the Price Tracker application",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "test": "jest",
+    "scrape": "ts-node src/scripts/runScraper.ts"
+  },
+  "keywords": ["price-tracker", "scraper", "playwright", "typescript"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "mongoose": "^7.0.3",
+    "playwright": "^1.52.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.15.11",
+    "@typescript-eslint/eslint-plugin": "^5.57.1",
+    "@typescript-eslint/parser": "^5.57.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.0.3"
+  }
+} 
