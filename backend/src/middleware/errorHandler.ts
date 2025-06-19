@@ -16,24 +16,24 @@ export class AppError extends Error {
 }
 
 export const errorHandler = (
-  err: Error | AppError,
-  req: Request,
+  err: AppError,
+  _req: Request,
   res: Response,
-  next: NextFunction
-) => {
-  if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
-      status: err.status,
-      message: err.message,
-    });
+  _next: NextFunction
+): void => {
+  let { statusCode = 500, message } = err;
+
+  if (process.env.NODE_ENV === 'production') {
+    // Don't leak error details in production
+    if (!err.isOperational) {
+      statusCode = 500;
+      message = 'Something went wrong!';
+    }
   }
 
-  // Log error for debugging
-  console.error('Error:', err);
-
-  // Send generic error response
-  return res.status(500).json({
-    status: 'error',
-    message: 'Something went wrong',
+  res.status(statusCode).json({
+    status: err.status,
+    message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 }; 

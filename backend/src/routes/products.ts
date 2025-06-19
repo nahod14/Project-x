@@ -1,105 +1,42 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import { body } from 'express-validator';
-import { protect } from '../middleware/auth';
-import Product from '../models/Product';
-
-interface AuthRequest extends Request {
-  user?: any;
-}
+import { authenticateToken } from '../middleware/auth';
+import {
+  getProducts,
+  getProduct,
+  addProduct,
+  updateProduct,
+  deleteProduct,
+  refreshProductPrice,
+  getPriceHistory
+} from '../controllers/productController';
 
 const router = express.Router();
 
 // Protect all routes
-router.use(protect);
+router.use(authenticateToken);
 
 // Validation middleware
 const productValidation = [
   body('url').isURL().withMessage('Please provide a valid URL'),
   body('targetPrice').isNumeric().withMessage('Target price must be a number'),
+  body('title').optional().isString().withMessage('Title must be a string'),
 ];
 
-// Get all products for the authenticated user
-router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const products = await Product.find({ user: req.user._id });
-    res.json(products);
-  } catch (error) {
-    next(error);
-  }
-});
+const updateValidation = [
+  body('targetPrice').optional().isNumeric().withMessage('Target price must be a number'),
+  body('title').optional().isString().withMessage('Title must be a string'),
+];
 
-// Get a single product
-router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const product = await Product.findOne({
-      _id: req.params.id,
-      user: req.user._id,
-    });
+// Routes
+router.get('/', getProducts);
+router.get('/:id', getProduct);
+router.post('/', productValidation, addProduct);
+router.patch('/:id', updateValidation, updateProduct);
+router.delete('/:id', deleteProduct);
 
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
-
-    res.json(product);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Create a new product
-router.post('/', productValidation, async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const { url, targetPrice } = req.body;
-
-    const product = new Product({
-      url,
-      targetPrice,
-      user: req.user._id,
-    });
-
-    await product.save();
-    res.status(201).json(product);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Update a product
-router.patch('/:id', productValidation, async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const { targetPrice } = req.body;
-    const product = await Product.findOneAndUpdate(
-      { _id: req.params.id, user: req.user._id },
-      { targetPrice },
-      { new: true }
-    );
-
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
-
-    res.json(product);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Delete a product
-router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const product = await Product.findOneAndDelete({
-      _id: req.params.id,
-      user: req.user._id,
-    });
-
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
-
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+// New price tracking routes
+router.post('/:id/refresh', refreshProductPrice);
+router.get('/:id/history', getPriceHistory);
 
 export default router; 
